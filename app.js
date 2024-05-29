@@ -1,7 +1,6 @@
-// app.js
+require("dotenv").config();
 const express = require("express");
 const logger = require("morgan");
-
 const mongoose = require("mongoose");
 
 const app = express();
@@ -11,8 +10,7 @@ app.use(logger("dev"));
 app.use(express.static("public"));
 app.use(express.json());
 
-//connect mongosse
-
+// Conectar ao MongoDB
 mongoose
   .connect("mongodb://127.0.0.1:27017/final-project-server")
   .then((x) =>
@@ -20,9 +18,15 @@ mongoose
   )
   .catch((err) => console.error("Error connecting to mongo", err));
 
-// ROUTES
+// IMPORTAR ROTAS
+const authRoutes = require("./routes/auth.routes");
+
+// USAR ROTAS
+app.use("/auth", authRoutes);
+
+// ROTA PRINCIPAL
 app.get("/", (req, res) => {
-  console.log(req);
+  res.send("Welcome to the backend server!");
 });
 
 app.listen(3000, () => console.log("App listening on port 3000!"));
