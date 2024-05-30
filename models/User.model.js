@@ -19,10 +19,6 @@ const userSchema = new Schema({
     type: String,
     required: [true, "Last Name is required"],
   },
-  dateOfBirth: {
-    type: Date,
-    required: [true, "Date of Birth is required"],
-  },
 });
 
 const User = model("User", userSchema);

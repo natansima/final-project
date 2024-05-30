@@ -5,9 +5,9 @@ const User = require("../models/User.model");
 
 // SIGN UP
 router.post("/signup", async (req, res) => {
-  const { password, email, name, lastName, dateOfBirth } = req.body;
+  const { password, email, name, lastName } = req.body;
 
-  if (!password || !email || !name || !lastName || !dateOfBirth) {
+  if (!password || !email || !name || !lastName) {
     res.status(400).send({ error: "Please provide all required fields" });
     return;
   }
@@ -26,18 +26,17 @@ router.post("/signup", async (req, res) => {
     password: hashedPassword,
     name,
     lastName,
-    dateOfBirth,
   };
 
   const createdUser = await User.create(newUser);
 
   // Formatar a data de nascimento
-  const formattedUser = {
-    ...createdUser.toObject(),
-    dateOfBirth: createdUser.dateOfBirth.toISOString().split("T")[0],
-  };
+  //const formattedUser = {
+  // ...createdUser.toObject(),
+  // dateOfBirth: createdUser.dateOfBirth.toISOString().split("T")[0],
+  // };
 
-  res.status(201).send(formattedUser);
+  res.status(201).send(createdUser);
 });
 // LOGIN
 router.post("/login", async (req, res) => {
@@ -74,5 +73,4 @@ router.post("/login", async (req, res) => {
   res.send({ authToken: token });
 });
 
-module.exports = router;
 module.exports = router;

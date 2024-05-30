@@ -1,3 +1,5 @@
+// App.js
+
 require("dotenv").config();
 const express = require("express");
 const logger = require("morgan");
@@ -21,8 +23,14 @@ mongoose
 // IMPORTAR ROTAS
 const authRoutes = require("./routes/auth.routes");
 
+const commentRoutes = require("./routes/comment.routes");
+const themeRoutes = require("./routes/theme.routes");
+
 // USAR ROTAS
 app.use("/auth", authRoutes);
+
+app.use("/comments", commentRoutes);
+app.use("/themes", themeRoutes);
 
 // ROTA PRINCIPAL
 app.get("/", (req, res) => {
