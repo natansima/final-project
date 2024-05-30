@@ -19,6 +19,12 @@ const userSchema = new Schema({
     type: String,
     required: [true, "Last Name is required"],
   },
+  activeThemes: [
+    {
+      theme: { type: Schema.Types.ObjectId, ref: "Theme" },
+      daysCompleted: [{ type: Number }],
+    },
+  ],
 });
 
 const User = model("User", userSchema);
