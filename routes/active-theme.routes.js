@@ -19,7 +19,7 @@ router.post("/start/:themeId", isAuthenticated, async (req, res) => {
     const activeTheme = new ActiveTheme({
       user: userId,
       theme: theme._id,
-      daysCompleted: [], // Day 1 unlocked by default
+      daysCompleted: [],
     });
 
     await activeTheme.save();
