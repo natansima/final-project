@@ -15,4 +15,5 @@ const themeSchema = new Schema({
 });
 
 const Theme = model("Theme", themeSchema);
+
 module.exports = Theme;

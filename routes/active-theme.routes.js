@@ -18,24 +18,30 @@ router.post("/start/:themeId", isAuthenticated, async (req, res, next) => {
       throw error;
     }
 
-    // Criar uma cópia do tema
-    const activeThemeData = {
-      user: userId,
-      theme: {
-        _id: theme._id,
-        name: theme.name,
-        days: theme.days.map((day) => ({
-          day: day.day,
-          goal: day.goal,
-          description: day.description,
-          isCompleted: false,
-          comments: [],
-        })),
-      },
-    };
+    // Certificar-se de que o dia 1 está desbloqueado e não completado
+    const days = theme.days.map((day) => ({
+      day: day.day,
+      goal: day.goal,
+      description: day.description,
+      isCompleted: day.day === 1 ? false : day.isCompleted,
+      comments: day.comments,
+    }));
 
-    const activeTheme = new ActiveTheme(activeThemeData);
+    const activeTheme = new ActiveTheme({
+      userId,
+      name: theme.name,
+      days,
+    });
+
     await activeTheme.save();
+
+    // Adicionar activeTheme ao usuário
+    await User.findByIdAndUpdate(userId, {
+      $push: { activeThemes: { theme: activeTheme._id, daysCompleted: [] } },
+      $set: { activeThemeId: activeTheme._id }, // Salvar activeThemeId no usuário
+    });
+
+    console.log(`Active Theme Created: ${activeTheme}`);
 
     res.status(201).send(activeTheme);
   } catch (error) {
@@ -45,18 +51,25 @@ router.post("/start/:themeId", isAuthenticated, async (req, res, next) => {
 
 // Marcar tarefa como concluída e desbloquear o próximo dia
 router.post(
-  "/:themeId/day/:day/complete",
+  "/:activeThemeId/day/:day/complete",
   isAuthenticated,
   async (req, res, next) => {
-    const { themeId, day } = req.params;
+    const { activeThemeId, day } = req.params;
     const { commentContent } = req.body;
     const userId = req.user._id;
 
     try {
+      console.log(`User ID: ${userId}`);
+      console.log(`Active Theme ID: ${activeThemeId}`);
+
+      // Encontrar o ActiveTheme correspondente
       const activeTheme = await ActiveTheme.findOne({
-        user: userId,
-        "theme._id": themeId,
-      });
+        _id: activeThemeId,
+        userId: userId,
+      }).populate("days.comments");
+
+      console.log(`Active Theme: ${activeTheme}`);
+
       if (!activeTheme) {
         const error = new Error("Active theme not found for user");
         error.status = 404;
@@ -67,7 +80,7 @@ router.post(
 
       // Verificar se o dia anterior foi concluído
       if (dayNum > 1) {
-        const previousTask = activeTheme.theme.days.find(
+        const previousTask = activeTheme.days.find(
           (task) => task.day === dayNum - 1
         );
         if (!previousTask || !previousTask.isCompleted) {
@@ -77,8 +90,8 @@ router.post(
         }
       }
 
-      // Marcar o dia como completo no tema ativo
-      const task = activeTheme.theme.days.find((task) => task.day === dayNum);
+      // Marcar o dia como completo no tema
+      const task = activeTheme.days.find((task) => task.day === dayNum);
       if (!task) {
         const error = new Error("Task not found");
         error.status = 404;
@@ -104,16 +117,14 @@ router.post(
       }
 
       // Desbloquear o próximo dia
-      const nextTask = activeTheme.theme.days.find(
-        (task) => task.day === dayNum + 1
-      );
+      const nextTask = activeTheme.days.find((task) => task.day === dayNum + 1);
       if (nextTask) {
         nextTask.isCompleted = false; // Desbloquear o próximo dia
       }
 
       await activeTheme.save();
 
-      res.send(activeTheme); // Enviar o tema ativo atualizado
+      res.send(activeTheme); // Enviar o tema atualizado
     } catch (error) {
       next(error);
     }
@@ -121,25 +132,35 @@ router.post(
 );
 
 // Obter status do tema ativo do usuário
-router.get("/:themeId/status", isAuthenticated, async (req, res, next) => {
-  const { themeId } = req.params;
-  const userId = req.user._id;
+router.get(
+  "/:activeThemeId/status",
+  isAuthenticated,
+  async (req, res, next) => {
+    const { activeThemeId } = req.params;
+    const userId = req.user._id;
 
-  try {
-    const activeTheme = await ActiveTheme.findOne({
-      user: userId,
-      "theme._id": themeId,
-    });
-    if (!activeTheme) {
-      const error = new Error("Active theme not found for user");
-      error.status = 404;
-      throw error;
+    try {
+      console.log(`User ID: ${userId}`);
+      console.log(`Active Theme ID: ${activeThemeId}`);
+
+      const activeTheme = await ActiveTheme.findOne({
+        _id: activeThemeId,
+        userId: userId,
+      }).populate("days.comments");
+
+      console.log(`Active Theme: ${activeTheme}`);
+
+      if (!activeTheme) {
+        const error = new Error("Active theme not found for user");
+        error.status = 404;
+        throw error;
+      }
+
+      res.send(activeTheme);
+    } catch (error) {
+      next(error);
     }
-
-    res.send(activeTheme);
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 module.exports = router;

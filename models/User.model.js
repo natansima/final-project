@@ -21,7 +21,7 @@ const userSchema = new Schema({
   },
   activeThemes: [
     {
-      theme: { type: Schema.Types.ObjectId, ref: "Theme" },
+      theme: { type: Schema.Types.ObjectId, ref: "ActiveTheme" },
       daysCompleted: [{ type: Number }],
     },
   ],
