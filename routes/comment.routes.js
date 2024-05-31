@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const Comment = require("../models/Comment.model");
+const Theme = require("../models/Theme.model"); // Certifique-se de que isso está presente
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // Editar comentário

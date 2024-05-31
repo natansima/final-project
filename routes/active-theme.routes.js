@@ -18,10 +18,16 @@ router.post("/start/:themeId", isAuthenticated, async (req, res, next) => {
       throw error;
     }
 
+    // Certificar-se de que o dia 1 está desbloqueado e não completado
+    theme.days.forEach((day) => {
+      if (day.day === 1) {
+        day.isCompleted = false;
+      }
+    });
+
     const activeTheme = new ActiveTheme({
       user: userId,
       theme: theme._id,
-      daysCompleted: [],
     });
 
     await activeTheme.save();
@@ -44,7 +50,7 @@ router.post(
       const activeTheme = await ActiveTheme.findOne({
         user: userId,
         theme: themeId,
-      });
+      }).populate("theme");
       if (!activeTheme) {
         const error = new Error("Active theme not found for user");
         error.status = 404;
@@ -52,21 +58,35 @@ router.post(
       }
 
       const dayNum = parseInt(day);
-      if (activeTheme.daysCompleted.includes(dayNum)) {
+
+      // Verificar se o dia anterior foi concluído
+      if (dayNum > 1) {
+        const previousTask = activeTheme.theme.days.find(
+          (task) => task.day === dayNum - 1
+        );
+        if (!previousTask || !previousTask.isCompleted) {
+          const error = new Error("Previous day not completed");
+          error.status = 400;
+          throw error;
+        }
+      }
+
+      // Marcar o dia como completo no tema
+      const theme = await Theme.findById(themeId);
+      const task = theme.days.find((task) => task.day === dayNum);
+      if (!task) {
+        const error = new Error("Task not found");
+        error.status = 404;
+        throw error;
+      }
+
+      if (task.isCompleted) {
         const error = new Error("Day already completed");
         error.status = 400;
         throw error;
       }
 
-      // Verificar se o dia anterior foi concluído
-      if (dayNum > 1 && !activeTheme.daysCompleted.includes(dayNum - 1)) {
-        const error = new Error("Previous day not completed");
-        error.status = 400;
-        throw error;
-      }
-
-      activeTheme.daysCompleted.push(dayNum);
-      await activeTheme.save();
+      task.isCompleted = true; // Marcar o dia atual como completo
 
       // Adicionar comentário se fornecido
       if (commentContent) {
@@ -75,13 +95,18 @@ router.post(
           content: commentContent,
           user: userId,
         });
-        const theme = await Theme.findById(themeId);
-        const task = theme.days.find((task) => task.day === dayNum);
         task.comments.push(comment._id);
-        await theme.save();
       }
 
-      res.send(activeTheme);
+      // Desbloquear o próximo dia
+      const nextTask = theme.days.find((task) => task.day === dayNum + 1);
+      if (nextTask) {
+        nextTask.isCompleted = false; // Desbloquear o próximo dia
+      }
+
+      await theme.save();
+
+      res.send(theme); // Enviar o tema atualizado
     } catch (error) {
       next(error);
     }
