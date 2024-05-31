@@ -18,19 +18,25 @@ router.post("/start/:themeId", isAuthenticated, async (req, res, next) => {
       throw error;
     }
 
-    // Certificar-se de que o dia 1 está desbloqueado e não completado
-    theme.days.forEach((day) => {
-      if (day.day === 1) {
-        day.isCompleted = false;
-      }
-    });
-
-    const activeTheme = new ActiveTheme({
+    // Criar uma cópia do tema
+    const activeThemeData = {
       user: userId,
-      theme: theme._id,
-    });
+      theme: {
+        _id: theme._id,
+        name: theme.name,
+        days: theme.days.map((day) => ({
+          day: day.day,
+          goal: day.goal,
+          description: day.description,
+          isCompleted: false,
+          comments: [],
+        })),
+      },
+    };
 
+    const activeTheme = new ActiveTheme(activeThemeData);
     await activeTheme.save();
+
     res.status(201).send(activeTheme);
   } catch (error) {
     next(error);
@@ -49,8 +55,8 @@ router.post(
     try {
       const activeTheme = await ActiveTheme.findOne({
         user: userId,
-        theme: themeId,
-      }).populate("theme");
+        "theme._id": themeId,
+      });
       if (!activeTheme) {
         const error = new Error("Active theme not found for user");
         error.status = 404;
@@ -71,9 +77,8 @@ router.post(
         }
       }
 
-      // Marcar o dia como completo no tema
-      const theme = await Theme.findById(themeId);
-      const task = theme.days.find((task) => task.day === dayNum);
+      // Marcar o dia como completo no tema ativo
+      const task = activeTheme.theme.days.find((task) => task.day === dayNum);
       if (!task) {
         const error = new Error("Task not found");
         error.status = 404;
@@ -99,14 +104,16 @@ router.post(
       }
 
       // Desbloquear o próximo dia
-      const nextTask = theme.days.find((task) => task.day === dayNum + 1);
+      const nextTask = activeTheme.theme.days.find(
+        (task) => task.day === dayNum + 1
+      );
       if (nextTask) {
         nextTask.isCompleted = false; // Desbloquear o próximo dia
       }
 
-      await theme.save();
+      await activeTheme.save();
 
-      res.send(theme); // Enviar o tema atualizado
+      res.send(activeTheme); // Enviar o tema ativo atualizado
     } catch (error) {
       next(error);
     }
@@ -121,8 +128,8 @@ router.get("/:themeId/status", isAuthenticated, async (req, res, next) => {
   try {
     const activeTheme = await ActiveTheme.findOne({
       user: userId,
-      theme: themeId,
-    }).populate("theme");
+      "theme._id": themeId,
+    });
     if (!activeTheme) {
       const error = new Error("Active theme not found for user");
       error.status = 404;
