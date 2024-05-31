@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const logger = require("morgan");
 const mongoose = require("mongoose");
+const errorHandler = require("./middleware/error-handler");
 
 const app = express();
 
@@ -34,5 +35,8 @@ app.use("/active-themes", activeThemeRoutes);
 app.get("/", (req, res) => {
   res.send("Welcome to the backend server!");
 });
+
+// Middleware de tratamento de erros
+app.use(errorHandler);
 
 app.listen(3000, () => console.log("App listening on port 3000!"));
