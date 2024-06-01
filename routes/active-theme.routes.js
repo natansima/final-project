@@ -172,6 +172,13 @@ router.post(
         throw error;
       }
 
+      // Verificar se o dia está completo
+      if (!task.isCompleted) {
+        const error = new Error("Day not completed");
+        error.status = 400;
+        throw error;
+      }
+
       // Verificar se já existe um comentário para o dia
       if (task.comments.length > 0) {
         const error = new Error("A comment already exists for this day");
