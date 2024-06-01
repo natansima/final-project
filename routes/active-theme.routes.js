@@ -14,6 +14,7 @@ router.get("/themes", isAuthenticated, async (req, res, next) => {
     next(error);
   }
 });
+
 // Selecionar tema e iniciar desafio
 router.post("/themes/:themeId", isAuthenticated, async (req, res, next) => {
   const { themeId } = req.params;
@@ -129,6 +130,63 @@ router.post(
       const nextTask = activeTheme.days.find((task) => task.day === dayNum + 1);
       if (nextTask) {
         nextTask.isCompleted = false; // Desbloquear o próximo dia
+      }
+
+      await activeTheme.save();
+
+      res.send(activeTheme); // Enviar o tema atualizado
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Adicionar comentário em um dia já concluído
+router.post(
+  "/:activeThemeId/day/:day/comment",
+  isAuthenticated,
+  async (req, res, next) => {
+    const { activeThemeId, day } = req.params;
+    const { commentContent } = req.body;
+    const userId = req.user._id;
+
+    try {
+      const activeTheme = await ActiveTheme.findOne({
+        _id: activeThemeId,
+        userId: userId,
+      }).populate("days.comments");
+
+      if (!activeTheme) {
+        const error = new Error("Active theme not found for user");
+        error.status = 404;
+        throw error;
+      }
+
+      const dayNum = parseInt(day);
+
+      // Encontrar o dia correspondente no tema ativo
+      const task = activeTheme.days.find((task) => task.day === dayNum);
+      if (!task) {
+        const error = new Error("Task not found");
+        error.status = 404;
+        throw error;
+      }
+
+      // Verificar se já existe um comentário para o dia
+      if (task.comments.length > 0) {
+        const error = new Error("A comment already exists for this day");
+        error.status = 400;
+        throw error;
+      }
+
+      // Adicionar comentário se fornecido
+      if (commentContent) {
+        const comment = await Comment.create({
+          day: dayNum,
+          content: commentContent,
+          user: userId,
+        });
+        task.comments.push(comment._id);
       }
 
       await activeTheme.save();
