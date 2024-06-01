@@ -141,35 +141,26 @@ router.post(
 );
 
 // Obter status do tema ativo do usuário
-router.get(
-  "/:activeThemeId/status",
-  isAuthenticated,
-  async (req, res, next) => {
-    const { activeThemeId } = req.params;
-    const userId = req.user._id;
+router.get("/:activeThemeId", isAuthenticated, async (req, res, next) => {
+  const { activeThemeId } = req.params;
+  const userId = req.user._id;
 
-    try {
-      console.log(`User ID: ${userId}`);
-      console.log(`Active Theme ID: ${activeThemeId}`);
+  try {
+    const activeTheme = await ActiveTheme.findOne({
+      _id: activeThemeId,
+      userId: userId,
+    }).populate("days.comments");
 
-      const activeTheme = await ActiveTheme.findOne({
-        _id: activeThemeId,
-        userId: userId,
-      }).populate("days.comments");
-
-      console.log(`Active Theme: ${activeTheme}`);
-
-      if (!activeTheme) {
-        const error = new Error("Active theme not found for user");
-        error.status = 404;
-        throw error;
-      }
-
-      res.send(activeTheme);
-    } catch (error) {
-      next(error);
+    if (!activeTheme) {
+      const error = new Error("Active theme not found for user");
+      error.status = 404;
+      throw error;
     }
+
+    res.send(activeTheme);
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 module.exports = router;
