@@ -2,7 +2,7 @@
   {
     "id": 1,
     "name": "Trilha do Bem-Estar",
-    "image": "file:///mnt/data/bem-estar_11zon.jpeg",
+    "image": "https://i.postimg.cc/9FSGS5sP/bem-estar-11zon.jpg",
     "descriptionTheme": "Comece o dia com clareza mental e paz interior.",
 
     "days": [
@@ -137,7 +137,7 @@
   {
     "id": 2,
     "name": "Trilha da Produtividade",
-    "image": "file:///mnt/data/produtividade_11zon.jpeg",
+    "image": "https://iili.io/JmcJT5N.jpg",
     "descriptionTheme": "Comece o dia com clareza mental e paz interior.",
     "days": [
       {
@@ -271,7 +271,7 @@
   {
     "id": 3,
     "name": "Trilha da Opção 3",
-    "image": "file:///mnt/data/gratidao_11zon.jpeg",
+    "image": "https://iili.io/Jmap7Fp.jpg",
     "descriptionTheme": "Comece o dia com clareza mental e paz interior.",
     "days": [
       {

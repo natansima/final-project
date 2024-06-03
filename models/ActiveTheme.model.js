@@ -3,6 +3,8 @@ const { Schema, model } = mongoose;
 
 const activeThemeSchema = new Schema({
   name: { type: String, required: true },
+  image: { type: String, required: true }, // Adicionado
+  descriptionTheme: { type: String, required: true }, // Adicionado
   days: [
     {
       day: { type: Number, required: true },

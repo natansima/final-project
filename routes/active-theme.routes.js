@@ -2,7 +2,7 @@ const router = require("express").Router();
 const User = require("../models/User.model");
 const Theme = require("../models/Theme.model");
 const ActiveTheme = require("../models/ActiveTheme.model");
-const Comment = require("../models/Comment.model"); // Certifique-se de que esta linha esteja presente
+const Comment = require("../models/Comment.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // Visualizar todos os temas disponíveis
@@ -58,6 +58,8 @@ router.post("/themes/:themeId", isAuthenticated, async (req, res, next) => {
     activeTheme = new ActiveTheme({
       userId,
       name: theme.name,
+      image: theme.image, // Adicionado
+      descriptionTheme: theme.descriptionTheme, // Adicionado
       days,
     });
 
@@ -66,7 +68,7 @@ router.post("/themes/:themeId", isAuthenticated, async (req, res, next) => {
     // Adicionar activeTheme ao usuário
     await User.findByIdAndUpdate(userId, {
       $push: { activeThemes: { theme: activeTheme._id, daysCompleted: [] } },
-      $set: { activeThemeId: activeTheme._id }, // Salvar activeThemeId no usuário
+      $set: { activeThemeId: activeTheme._id },
     });
 
     console.log(`Active Theme Created: ${activeTheme}`);
