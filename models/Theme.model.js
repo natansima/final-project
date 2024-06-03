@@ -3,8 +3,8 @@ const { Schema, model } = mongoose;
 
 const themeSchema = new Schema({
   name: { type: String, required: true },
-  image: { type: String, required: true }, // Adicionado
-  descriptionTheme: { type: String, required: true }, // Adicionado
+  image: { type: String, required: true },
+  descriptionTheme: { type: String, required: true },
   days: [
     {
       day: { type: Number, required: true },
@@ -17,4 +17,5 @@ const themeSchema = new Schema({
 });
 
 const Theme = model("Theme", themeSchema);
+
 module.exports = Theme;

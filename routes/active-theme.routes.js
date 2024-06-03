@@ -58,8 +58,8 @@ router.post("/themes/:themeId", isAuthenticated, async (req, res, next) => {
     activeTheme = new ActiveTheme({
       userId,
       name: theme.name,
-      image: theme.image, // Adicionado
-      descriptionTheme: theme.descriptionTheme, // Adicionado
+      image: theme.image,
+      descriptionTheme: theme.descriptionTheme,
       days,
     });
 
@@ -128,14 +128,6 @@ router.post(
         throw error;
       }
 
-      if (task.isCompleted) {
-        const error = new Error("Day already completed");
-        error.status = 400;
-        throw error;
-      }
-
-      task.isCompleted = true; // Marcar o dia atual como completo
-
       // Adicionar comentário se fornecido
       if (commentContent) {
         const comment = await Comment.create({
@@ -146,10 +138,13 @@ router.post(
         task.comments.push(comment._id);
       }
 
-      // Desbloquear o próximo dia
-      const nextTask = activeTheme.days.find((task) => task.day === dayNum + 1);
-      if (nextTask) {
-        nextTask.isCompleted = false; // Desbloquear o próximo dia
+      // Desbloquear o próximo dia apenas se o dia atual ainda não estiver completo
+      if (!task.isCompleted) {
+        task.isCompleted = true; // Marcar o dia atual como completo
+        const nextTask = activeTheme.days.find((task) => task.day === dayNum + 1);
+        if (nextTask) {
+          nextTask.isCompleted = false; // Desbloquear o próximo dia
+        }
       }
 
       await activeTheme.save();
