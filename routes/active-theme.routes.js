@@ -2,14 +2,26 @@ const router = require("express").Router();
 const User = require("../models/User.model");
 const Theme = require("../models/Theme.model");
 const ActiveTheme = require("../models/ActiveTheme.model");
-const Comment = require("../models/Comment.model");
+const Comment = require("../models/Comment.model"); // Certifique-se de que esta linha esteja presente
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
-// visualizar todos os temas disponíveis
+// Visualizar todos os temas disponíveis
 router.get("/themes", isAuthenticated, async (req, res, next) => {
   try {
     const themes = await Theme.find();
     res.send(themes);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Obter todos os temas ativos do usuário
+router.get("/", isAuthenticated, async (req, res, next) => {
+  const userId = req.user._id;
+
+  try {
+    const activeThemes = await ActiveTheme.find({ userId });
+    res.send(activeThemes);
   } catch (error) {
     next(error);
   }
@@ -28,6 +40,12 @@ router.post("/themes/:themeId", isAuthenticated, async (req, res, next) => {
       throw error;
     }
 
+    // Verificar se o tema já está ativo para o usuário
+    let activeTheme = await ActiveTheme.findOne({ userId, name: theme.name });
+    if (activeTheme) {
+      return res.status(200).send(activeTheme);
+    }
+
     // Certificar-se de que o dia 1 está desbloqueado e não completado
     const days = theme.days.map((day) => ({
       day: day.day,
@@ -37,7 +55,7 @@ router.post("/themes/:themeId", isAuthenticated, async (req, res, next) => {
       comments: day.comments,
     }));
 
-    const activeTheme = new ActiveTheme({
+    activeTheme = new ActiveTheme({
       userId,
       name: theme.name,
       days,
@@ -130,70 +148,6 @@ router.post(
       const nextTask = activeTheme.days.find((task) => task.day === dayNum + 1);
       if (nextTask) {
         nextTask.isCompleted = false; // Desbloquear o próximo dia
-      }
-
-      await activeTheme.save();
-
-      res.send(activeTheme); // Enviar o tema atualizado
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-// Adicionar comentário em um dia já concluído
-router.post(
-  "/:activeThemeId/day/:day/comment",
-  isAuthenticated,
-  async (req, res, next) => {
-    const { activeThemeId, day } = req.params;
-    const { commentContent } = req.body;
-    const userId = req.user._id;
-
-    try {
-      const activeTheme = await ActiveTheme.findOne({
-        _id: activeThemeId,
-        userId: userId,
-      }).populate("days.comments");
-
-      if (!activeTheme) {
-        const error = new Error("Active theme not found for user");
-        error.status = 404;
-        throw error;
-      }
-
-      const dayNum = parseInt(day);
-
-      // Encontrar o dia correspondente no tema ativo
-      const task = activeTheme.days.find((task) => task.day === dayNum);
-      if (!task) {
-        const error = new Error("Task not found");
-        error.status = 404;
-        throw error;
-      }
-
-      // Verificar se o dia está completo
-      if (!task.isCompleted) {
-        const error = new Error("Day not completed");
-        error.status = 400;
-        throw error;
-      }
-
-      // Verificar se já existe um comentário para o dia
-      if (task.comments.length > 0) {
-        const error = new Error("A comment already exists for this day");
-        error.status = 400;
-        throw error;
-      }
-
-      // Adicionar comentário se fornecido
-      if (commentContent) {
-        const comment = await Comment.create({
-          day: dayNum,
-          content: commentContent,
-          user: userId,
-        });
-        task.comments.push(comment._id);
       }
 
       await activeTheme.save();
