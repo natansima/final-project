@@ -15,7 +15,10 @@ app.use(cors()); // Adicione esta linha para habilitar CORS
 
 // Conectar ao MongoDB
 mongoose
-  .connect("mongodb://127.0.0.1:27017/final-project-server")
+  //.connect("mongodb://127.0.0.1:27017/final-project-server")
+  .connect(
+    "mongodb+srv://natan16simoes:GQw19YWeP3D16r1S@cluster0.6xo0cow.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  )
   .then((x) =>
     console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`)
   )
